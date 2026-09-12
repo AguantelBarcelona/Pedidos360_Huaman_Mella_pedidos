@@ -1,5 +1,6 @@
 package cl.pedidos360.pedidos_service.controller;
 
+import cl.pedidos360.pedidos_service.service.InventarioException;
 import cl.pedidos360.pedidos_service.service.PedidoNoEncontradoException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -40,6 +41,15 @@ public class GlobalExceptionHandler {
         return ResponseEntity
                 .status(HttpStatus.BAD_REQUEST)
                 .body(cuerpoError(detalle));
+    }
+
+    @ExceptionHandler(InventarioException.class)
+    public ResponseEntity<Map<String, Object>> manejarInventario(
+            InventarioException ex) {
+
+        return ResponseEntity
+                .status(HttpStatus.CONFLICT)
+                .body(cuerpoError(ex.getMessage()));
     }
 
     private Map<String, Object> cuerpoError(String mensaje) {
