@@ -4,7 +4,10 @@ import cl.pedidos360.pedidos_service.model.Pedido;
 import cl.pedidos360.pedidos_service.service.PedidoService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.security.oauth2.jwt.Jwt;
 
 import java.util.List;
 
@@ -23,12 +26,18 @@ public class PedidoController {
         return pedidoService.listarTodos();
     }
 
+    @GetMapping ("/mios")
+    public List<Pedido> listarPedidosDelUsuario(@AuthenticationPrincipal Jwt jwt) {
+        return pedidoService.buscarPorCliente(jwt.getClaimAsString("email"));
+    }
+
     @GetMapping("/{id}")
     public Pedido obtener(@PathVariable Long id) {
         return pedidoService.buscarPorId(id);
     }
 
     @GetMapping("/cliente/{email}")
+    @PreAuthorize ("hasRole('ADMIN')")
     public List<Pedido> buscarPorCliente(
             @PathVariable String email) {
 
