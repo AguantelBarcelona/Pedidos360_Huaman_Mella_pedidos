@@ -1,13 +1,14 @@
 package cl.pedidos360.pedidos_service.controller;
 
+import cl.pedidos360.pedidos_service.dto.CrearPedidoRequest;
 import cl.pedidos360.pedidos_service.model.Pedido;
 import cl.pedidos360.pedidos_service.service.PedidoService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.web.bind.annotation.*;
 import org.springframework.security.oauth2.jwt.Jwt;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
@@ -22,22 +23,30 @@ public class PedidoController {
     }
 
     @GetMapping
+    @PreAuthorize("hasRole('ADMIN')")
     public List<Pedido> listar() {
         return pedidoService.listarTodos();
     }
 
-    @GetMapping ("/mios")
-    public List<Pedido> listarPedidosDelUsuario(@AuthenticationPrincipal Jwt jwt) {
-        return pedidoService.buscarPorCliente(jwt.getClaimAsString("email"));
+    @GetMapping("/mios")
+    public List<Pedido> listarPedidosDelUsuario(
+            @AuthenticationPrincipal Jwt jwt) {
+
+        return pedidoService.buscarPorClienteSub(
+                jwt.getSubject()
+        );
     }
 
     @GetMapping("/{id}")
-    public Pedido obtener(@PathVariable Long id) {
+    @PreAuthorize("hasRole('ADMIN')")
+    public Pedido obtener(
+            @PathVariable Long id) {
+
         return pedidoService.buscarPorId(id);
     }
 
     @GetMapping("/cliente/{email}")
-    @PreAuthorize ("hasRole('ADMIN')")
+    @PreAuthorize("hasRole('ADMIN')")
     public List<Pedido> buscarPorCliente(
             @PathVariable String email) {
 
@@ -47,9 +56,13 @@ public class PedidoController {
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     public Pedido crear(
-            @Valid @RequestBody Pedido pedido) {
+            @Valid @RequestBody CrearPedidoRequest request,
+            @AuthenticationPrincipal Jwt jwt) {
 
-        return pedidoService.crear(pedido);
+        return pedidoService.crear(
+                request,
+                jwt.getSubject()
+        );
     }
 
     @PutMapping("/{id}")
@@ -57,12 +70,16 @@ public class PedidoController {
             @PathVariable Long id,
             @Valid @RequestBody Pedido pedido) {
 
-        return pedidoService.actualizar(id, pedido);
+        return pedidoService.actualizar(
+                id,
+                pedido
+        );
     }
 
     @DeleteMapping("/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void eliminar(@PathVariable Long id) {
+    public void eliminar(
+            @PathVariable Long id) {
 
         pedidoService.eliminar(id);
     }

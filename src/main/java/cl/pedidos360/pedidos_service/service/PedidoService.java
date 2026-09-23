@@ -3,6 +3,7 @@ package cl.pedidos360.pedidos_service.service;
 import cl.pedidos360.pedidos_service.client.InventarioClient;
 import cl.pedidos360.pedidos_service.client.ProductoClient;
 import cl.pedidos360.pedidos_service.client.ProductoResponse;
+import cl.pedidos360.pedidos_service.dto.CrearPedidoRequest;
 import cl.pedidos360.pedidos_service.model.Pedido;
 import cl.pedidos360.pedidos_service.repository.PedidoRepository;
 import org.springframework.stereotype.Service;
@@ -39,24 +40,42 @@ public class PedidoService {
         return pedidoRepository.findByClienteEmail(email);
     }
 
-    public Pedido crear(Pedido pedido) {
+    public List<Pedido> buscarPorClienteSub(String clienteSub) {
+        return pedidoRepository.findByClienteSub(clienteSub);
+    }
 
-        pedido.setId(null);
+    public Pedido crear(
+            CrearPedidoRequest request,
+            String clienteSub) {
+
+        Pedido pedido = new Pedido();
+
+        // Datos proporcionados por la solicitud.
+        pedido.setClienteEmail(request.clienteEmail());
+        pedido.setProductoId(request.productoId());
+        pedido.setCantidad(request.cantidad());
+
+        // La identidad real del propietario proviene del JWT.
+        pedido.setClienteSub(clienteSub);
+
+        // El estado inicial lo define el backend.
         pedido.setEstado("CREADO");
 
-        // 1. Consultar el producto y obtener el precio oficial.
+        // Consultar productos-service para obtener el precio oficial.
         ProductoResponse producto =
-                productoClient.obtenerProducto(pedido.getProductoId());
+                productoClient.obtenerProducto(
+                        request.productoId()
+                );
 
         pedido.setPrecioUnitario(producto.precio());
 
-        // 2. Reservar el stock solicitado.
+        // Reservar stock antes de guardar el pedido.
         inventarioClient.reservarStock(
-                pedido.getProductoId(),
-                pedido.getCantidad()
+                request.productoId(),
+                request.cantidad()
         );
 
-        // 3. Guardar el pedido solamente después de reservar stock.
+        // @PrePersist calculará total y fechaCreacion.
         return pedidoRepository.save(pedido);
     }
 
@@ -64,9 +83,11 @@ public class PedidoService {
 
         Pedido existente = buscarPorId(id);
 
-        // Consultar el precio oficial del nuevo producto.
+        // Consultar nuevamente el precio oficial del producto.
         ProductoResponse producto =
-                productoClient.obtenerProducto(datos.getProductoId());
+                productoClient.obtenerProducto(
+                        datos.getProductoId()
+                );
 
         existente.setClienteEmail(datos.getClienteEmail());
         existente.setProductoId(datos.getProductoId());

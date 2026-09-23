@@ -22,6 +22,12 @@ public class Pedido {
     @Column(nullable = false)
     private String clienteEmail;
 
+    // Identificador único del usuario autenticado en Cognito.
+    // Se obtiene desde el claim "sub" del JWT.
+    // Se mantiene nullable para no afectar pedidos antiguos.
+    @Column
+    private String clienteSub;
+
     @NotNull(message = "El producto es obligatorio")
     @Min(value = 1, message = "El producto debe tener un ID válido")
     @Column(nullable = false)
@@ -111,6 +117,14 @@ public class Pedido {
 
     public void setClienteEmail(String clienteEmail) {
         this.clienteEmail = clienteEmail;
+    }
+
+    public String getClienteSub() {
+        return clienteSub;
+    }
+
+    public void setClienteSub(String clienteSub) {
+        this.clienteSub = clienteSub;
     }
 
     public Long getProductoId() {
